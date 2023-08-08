@@ -1,2 +1,113 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+import SwiftUI
+
+struct ContentView: View {
+    @State private var numUsers: Int = 4 // Default number of users
+    @State private var inputs: [Int] = []
+    @State private var outcome: Int = 0
+    @State private var closestInput: Int = 0
+    @State private var diff: Int = 0
+    @State private var sum: Int = 0
+    @State private var currentIndex: Int = 0
+    @State private var inputText: String = ""
+    @State private var winnerIndex: Int = 0
+    @State private var askingNumUsers: Bool = true // Bool to track if we're asking for the number of users
+    @State private var isTie: Bool = false // Track if there is a tie
+
+    var body: some View {
+        VStack {
+            if askingNumUsers {
+                Text("Enter the number of players: ")
+
+                HStack {
+                    TextField("Enter number", text: $inputText)
+                        .keyboardType(.numberPad)
+
+                    Button("Enter") {
+                        if let value = Int(inputText), value > 0 {
+                            numUsers = value
+                            inputs = Array(repeating: 0, count: numUsers)
+                            askingNumUsers = false
+                            inputText = ""
+                        } else {
+                            inputText = ""
+                        }
+                    }
+                }
+            } else {
+                if (currentIndex < numUsers) {
+                    Text("Enter a number between 0 and 100 for user \(currentIndex + 1): ")
+                }
+                HStack {
+                    TextField("Enter number", text: $inputText)
+                        .keyboardType(.numberPad)
+
+                    Button("Enter") {
+                        if let value = Int(inputText), value >= 0 && value <= 100 {
+                            inputs[currentIndex] = value
+                            sum += value
+                            currentIndex += 1
+                            inputText = ""
+
+                            if currentIndex == inputs.count {
+                                calculateOutcome()
+                            }
+                        } else {
+                            inputText = ""
+                        }
+                    }
+                }
+                if currentIndex >= inputs.count {
+                    Text("The outcome is \(outcome)")
+                    if isTie {
+                        Text("There is no winner due to a tie.")
+                    } else {
+                        Text("The winner is player (\(winnerIndex + 1)) with the closest guess to the average of all the players = \(closestInput)")
+                    }
+                    Button("Replay") {
+                        resetGame()
+                    }
+                }
+            }
+        }
+        .padding()
+    }
+
+    func calculateOutcome() {
+        let average = Double(sum) / Double(inputs.count)
+        outcome = Int(round(average * 0.8))
+        var winners = [Int]()
+
+        for i in 0..<inputs.count {
+            let currDiff = abs(inputs[i] - outcome)
+            if currDiff < diff || i == 0 {
+                diff = currDiff
+                closestInput = inputs[i]
+                winnerIndex = i
+                winners = [i]
+            } else if currDiff == diff {
+                winners.append(i)
+            }
+        }
+
+        isTie = winners.count > 1
+    }
+
+    func resetGame() {
+        inputs = []
+        outcome = 0
+        closestInput = 0
+        diff = 0
+        sum = 0
+        currentIndex = 0
+        inputText = ""
+        winnerIndex = 0
+        askingNumUsers = true
+        isTie = false
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
+}
